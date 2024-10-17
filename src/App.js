@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import data from './table.json';
 import './style.css'
 
+let result = new Map();
+
 function App() {
     const [tableData, setData] = useState({partitionList: []});
-
     useEffect(() => {
         setData(data);
     }, []);
-
-
 
     return (
         <div>
@@ -19,13 +18,9 @@ function App() {
                     {createBody(partition)}
                 </table>
             ))}
-            <button onClick={updateData}>Отправить</button>
+            <button onClick={sendData}>Отправить</button>
         </div>
     )
-}
-
-function updateData() {
-
 }
 
 function createHeader(partitionList) {
@@ -65,26 +60,49 @@ function createBody(partitionList) {
     rowList = rowList.flat()
     return (
         <tbody>
-        {rowList.map(row => (
-            <tr>
-                <td>{row.name}</td>
-                <td>{row.index}</td>
-                {row.indicatorList.map(indicator => {
-                    return (<td>
-                        {indicator.indicatorsClassifier == null ? (
-                            ""
-                        ) : (
-                            <input type="text" key={indicator.id} placeholder={"Начните вводить"} value={indicator.value} onChange={value =>
-                                console.log(indicator.id, " - ", value.target.value)
-                            }/>
-                        )}
-                    </td>)
-                })}
-            </tr>
-        ))}
+            {rowList.map(row => (
+                <tr>
+                    <td>{row.name}</td>
+                    <td>{row.rowNumber}</td>
+                    {row.indicatorList.map(indicator => {
+                        return (<td>
+                            {indicator.indicatorsClassifier == null ? (
+                                ""
+                            ) : (
+                                <input type="text" key={indicator.id} placeholder={"Начните вводить"}
+                                       value={indicator.value} onChange={e => {
+                                        result.set(indicator.id, e.target.value)
+                                }
+                                }
+                                />
+                            )}
+                        </td>)
+                    })}
+                </tr>
+            ))}
         </tbody>
     )
 }
 
+const sendData = async () => {
+    const resultArray = Array.from(result.entries());
+
+    try {
+        const response = await fetch('/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(Object.fromEntries(resultArray))
+        })
+        if (response.ok) {
+            console.log('OK');
+        } else {
+            console.error('Failed to send data');
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 export default App;
